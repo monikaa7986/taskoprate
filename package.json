@@ -1,0 +1,19 @@
+{
+  "name": "atelier-ecommerce",
+  "version": "1.0.0",
+  "description": "Atelier Luxury Clothing E-Commerce Website",
+  "private": true,
+  "scripts": {
+    "dev": "node dev.js",
+    "start": "node dev.js",
+    "seed": "npm run seed --prefix backend",
+    "dev:backend": "npm run start --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "install:all": "npm install --prefix backend && npm install --prefix frontend",
+    "build": "npm run build --prefix frontend"
+  },
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
