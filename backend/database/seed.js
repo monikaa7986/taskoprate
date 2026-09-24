@@ -805,12 +805,16 @@ async function seedDatabase() {
   console.log('   - Store settings & Customer reviews');
 }
 
-seedDatabase()
-  .then(() => {
-    console.log('--- Database Seeding Complete ---');
-    process.exit(0);
-  })
-  .catch((err) => {
-    console.error('Database seeding error:', err);
-    process.exit(1);
-  });
+if (require.main === module) {
+  seedDatabase()
+    .then(() => {
+      console.log('--- Database Seeding Complete ---');
+      process.exit(0);
+    })
+    .catch((err) => {
+      console.error('Database seeding error:', err);
+      process.exit(1);
+    });
+}
+
+module.exports = seedDatabase;

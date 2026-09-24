@@ -15,7 +15,10 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*',
+  origin: (origin, callback) => {
+    // Allow any origin in production or dev
+    callback(null, true);
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -50,13 +53,15 @@ const { errorHandler, notFound } = require('./middleware/errorHandler');
 app.use(notFound);
 app.use(errorHandler);
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`===============================================`);
-  console.log(`🚀 E-Commerce REST API running on port ${PORT}`);
-  console.log(`📡 URL: http://localhost:${PORT}`);
-  console.log(`🌿 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`===============================================`);
-});
+// Start Server (only when not running inside Vercel Serverless Function)
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`===============================================`);
+    console.log(`🚀 E-Commerce REST API running on port ${PORT}`);
+    console.log(`📡 URL: http://localhost:${PORT}`);
+    console.log(`🌿 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`===============================================`);
+  });
+}
 
 module.exports = app;

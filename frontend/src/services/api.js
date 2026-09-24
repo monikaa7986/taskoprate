@@ -1,21 +1,10 @@
 import { handleMockRequest } from './mockApi';
 
 const configuredApiUrl = import.meta.env.VITE_API_URL;
+// Base URL points to configured backend URL or relative /api
 const API_BASE_URL = configuredApiUrl || '/api';
 
-// Check if running on a remote static host (like *.vercel.app) without an external backend URL configured
-const isStaticProduction =
-  !configuredApiUrl &&
-  typeof window !== 'undefined' &&
-  window.location.hostname !== 'localhost' &&
-  window.location.hostname !== '127.0.0.1';
-
 export async function request(endpoint, options = {}) {
-  // If in static production deployment without external backend, immediately serve via mock engine
-  if (isStaticProduction) {
-    return await handleMockRequest(endpoint, options);
-  }
-
   const url = `${API_BASE_URL}${endpoint}`;
   const headers = {
     'Content-Type': 'application/json',
@@ -39,16 +28,10 @@ export async function request(endpoint, options = {}) {
   try {
     const response = await fetch(url, config);
 
-    // If Vercel or static CDN returned 405 Method Not Allowed or 404
-    if (response.status === 405 || response.status === 404) {
-      console.warn(`[API] Endpoint ${endpoint} returned ${response.status}. Falling back to client-side mock service.`);
-      return await handleMockRequest(endpoint, options);
-    }
-
-    // Check if response is HTML instead of JSON (typical when SPA rewrite serves index.html on missing API route)
+    // If endpoint returned 405 or HTML on an error status (unrouted static SPA page)
     const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('text/html')) {
-      console.warn(`[API] Endpoint ${endpoint} returned HTML instead of JSON. Falling back to client-side mock service.`);
+    if (response.status === 405 || (contentType.includes('text/html') && !response.ok)) {
+      console.warn(`[API] Endpoint ${endpoint} returned ${response.status}. Falling back to resilient client layer.`);
       return await handleMockRequest(endpoint, options);
     }
 
@@ -64,13 +47,9 @@ export async function request(endpoint, options = {}) {
 
     return data;
   } catch (error) {
-    // If network error (e.g. backend offline or server unreachable), fallback to mock
-    if (
-      error.message?.includes('Failed to fetch') ||
-      error.message?.includes('NetworkError') ||
-      error.status >= 500
-    ) {
-      console.warn(`[API] Network failure for ${endpoint}. Falling back to mock service.`);
+    // If network connection failed completely (e.g. backend server is offline)
+    if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
+      console.warn(`[API] Network failure connecting to ${url}. Falling back to resilient client layer.`);
       return await handleMockRequest(endpoint, options);
     }
 
